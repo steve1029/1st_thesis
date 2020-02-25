@@ -1,0 +1,71 @@
+#!/bin/bash
+
+while [ "$1" ]
+do
+	case "${1#-}" in
+		h|-help) echo "dstat [-NODEPREFIX[min-max[,min-max...]]]"; exit;;
+		s|-system) SYSTEM='true';;
+		v|-verbose) VERBOSE='true';;
+		*) LIST="$LIST $(echo " $1" | sed -r 's/^ -*([a-z]*)=*/\1/')";;
+	esac
+	shift
+done
+
+NODES=$(for N in $(sed -nr 's/^(10|192.168|172.(1[6-9]|2[0-9]|3[0-1]))\.\S+\s+(\w+[0-9]).*/\3/p' /etc/hosts)
+		do
+			if [ -z "$LIST" ]
+			then
+				echo $N
+			else
+				for L in $LIST
+				do
+					if [ "$L" = "${N%%[0-9]*}" ]
+					then
+						echo $N
+					elif [ "${L%%[0-9]*}" = "${N%%[0-9]*}" ]
+					then
+						IFS=','
+						for R in ${L##*[a-z]}
+						do
+							test "${N##*[a-z]}" -ge "0${R%-*}" -a "${N##*[a-z]}" -le "0${R#*-}" && echo $N
+						done
+						IFS=' '
+					fi
+				done
+			fi
+		done | sort -u)
+
+if [ "$SYSTEM" -a "$UID" = 0 ]
+then
+	for N in $NODES
+	do (
+		test "$VERBOSE" && echo -n "+" >&2
+		TMP=$(ssh -o ConnectTimeout=2 $N 'echo \
+				$(sed -nr "s/^cpu MHz[^0-9]*([0-9]+).*/\1/p" /proc/cpuinfo | head -n1) \
+				$(/usr/sbin/dmidecode -t 17 | sed -nr "s/\s*Speed:\s*([^(]+).*$/\1/p" | head -n1)' \
+				2> /dev/null)
+		test "$VERBOSE" && echo -e -n "\b \b" >&2
+		echo -e "$N\t$TMP"
+	) & done | sort | sed -e 's/ / MHz   /' -e 's/^/  /' -e '1i\  Node\t  CPU\t     RAM'
+else
+	for N in $NODES
+	do (
+		test "$VERBOSE" && echo -n "+" >&2
+		TMP=$(ssh -o ConnectTimeout=2 $N 'top -i -b -d0.2 -n2 | \
+			sed -re "1,/^$/d" -e "1,/^Tasks/d" -e "/^ *[0-9]+ +root/d" -e "/^ *[0-9]+ +[^ ]+ +39 /d"\
+				-e "s/^KiB.*used, *([0-9]*) free, *([0-9]*) .*$/+\1+\2/" \
+				-e "/(top|sshd|orted|mpirun) *$/d" -e "s/^ *[0-9]+ +(\S+) +(\S+ +){9}(\S+).*$/ \1(\3)/" \
+				-e "s/^%Cpu.* sy,//" -e "s/ id.* st //"' \
+				2> /dev/null)
+		test "$VERBOSE" && echo -e -n "\b \b" >&2
+		if [ "$TMP" != "${TMP%PID*}" ]
+		then
+			CPU=$(echo ${TMP%%id,*} | sed -e 's/ ni,/+/' | bc | sed -e 's/^0$/0.0/' -e 's/^\./0./') && TMP=$(echo ${TMP#*+})
+			RAM=$(echo $((10000+(${TMP%PID*})*10/1048576)) | sed -re 's/^100?//' -e 's/(.)$/.\1G/')
+			USR=$(echo ${TMP#*%CPU %MEM TIME+ COMMAND})
+			echo -e "  $N\t$CPU\t$RAM\t$USR"
+		else
+			echo -e "  $N"
+		fi
+	) & done | sort | sed -re 's/\t(.)([.%])/\t  \1\2/g' -e 's/\t(..)([.%])/\t \1\2/g' -e '1i\  Node\t  CPU\t  RAM\t  Users'
+fi

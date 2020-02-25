@@ -1,0 +1,97 @@
+# Author  : Ki-Hwan Kim
+# Purpose : Class to get the square-sum fields
+# Target  : GPU using PyOpenCL
+# Created : 2012-03-12
+# Modified:
+
+import numpy as np
+import pyopencl as cl
+
+from kemp.fdtd3d.util import common, common_gpu
+from fields import Fields
+
+
+class GetFieldsSquareSum:
+    def __init__(self, fields, str_f, pt0, pt1):
+        """
+        """
+
+        common.check_type('fields', fields, Fields)
+        common.check_type('str_f', str_f, (str, list, tuple), str)
+        common.check_type('pt0', pt0, (list, tuple), (int, float))
+        common.check_type('pt1', pt1, (list, tuple), (int, float))
+
+        pt0 = list( common.convert_indices(fields.ns, pt0) )
+        pt1 = list( common.convert_indices(fields.ns, pt1) )
+
+        # local variables
+        str_fs = common.convert_to_tuple(str_f)
+        dtype_str_list = fields.dtype_str_list
+
+        for strf in str_fs:
+            strf_list = ['ex', 'ey', 'ez', 'hx', 'hy', 'hz']
+            common.check_value('str_f', strf, strf_list)
+
+        for axis, n, p0, p1 in zip(['x', 'y', 'z'], fields.ns, pt0, pt1):
+            common.check_value('pt0 %s' % axis, p0, range(n))
+            common.check_value('pt1 %s' % axis, p1, range(n))
+
+        # program
+        macros = ['NMAX', 'XID', 'YID', 'ZID', \
+                  'ARGS', \
+                  'TARGET', 'SOURCE', 'OVERWRITE', \
+                  'DTYPE', 'PRAGMA_fp64']
+
+        nmax_str, xid_str, yid_str, zid_str = common_gpu.macro_replace_list(pt0, pt1)
+        values = [nmax_str, xid_str, yid_str, zid_str, \
+                  '__global DTYPE *source', \
+                  'target[sub_idx]', 'pown(source[idx], 2)', '+='] + \
+                  dtype_str_list
+
+        ksrc = common.replace_template_code( \
+            open(common_gpu.src_path + 'copy.cl').read(), macros, values)
+        program = cl.Program(fields.context, ksrc).build()
+
+        # allocation
+        source_bufs = [fields.get_buf(str_f) for str_f in str_fs]
+        shape = common.shape_two_points(pt0, pt1, len(str_fs))
+
+        host_array = np.zeros(shape, dtype=fields.dtype)
+        split_host_array = np.split(host_array, len(str_fs))
+        split_host_array_dict = dict( zip(str_fs, split_host_array) ) 
+
+        target_buf = cl.Buffer( \
+            fields.context, \
+            cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR, \
+            hostbuf=host_array)
+
+        # global variables
+        self.mainf = fields
+        self.program = program
+        self.source_bufs = source_bufs
+        self.target_buf = target_buf
+        self.host_array = host_array
+        self.split_host_array_dict = split_host_array_dict
+
+        nmax = int(nmax_str)
+        remainder = nmax % fields.ls
+        self.gs = nmax if remainder == 0 else nmax - remainder + fields.ls 
+
+
+    def square_sum(self):
+        nx, ny, nz = self.mainf.ns
+
+        for shift_idx, source_buf in enumerate(self.source_bufs):
+            self.program.copy( \
+                self.mainf.queue, (self.gs,), (self.mainf.ls,), \
+                nx, ny, nz, np.int32(shift_idx), \
+                self.target_buf, source_buf)
+
+
+    def get_fields(self, str_f=''):
+        cl.enqueue_copy(self.mainf.queue, self.host_array, self.target_buf)
+
+        if str_f == '':
+            return self.host_array
+        else:
+            return self.split_host_array_dict[str_f]

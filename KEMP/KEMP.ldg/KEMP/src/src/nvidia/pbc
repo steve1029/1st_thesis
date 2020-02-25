@@ -1,0 +1,70 @@
+/*
+Author  : Myung-su Seok
+Purpose : Nvidia CUDA kernels to update the core of FDTD
+Target  : GPU
+Created : 2012.05.02
+Modified: 2013.06.07
+*/
+
+__ACTIVATE_FLOAT64__
+
+__KERNEL__ void update_2d(int fd_type, int ax, int nx, int ny, __GLOBAL__ __FLOAT__* fd)
+{
+    int idx = __GET_GLOBAL_INDEX__;
+    int idx_tgt, idx_src, idx_swp, idx_max;
+
+    if(ax==0)
+    {
+        idx_tgt = (nx-1)*ny + idx;
+        idx_src = (   0)*ny + idx;
+        idx_max =        ny      ;
+    }
+    if(ax==1)
+    {
+        idx_tgt = idx*ny + ny-1;
+        idx_src = idx*ny +    0;
+        idx_max =     nx       ;
+    }
+    if(fd_type==0)
+    {
+        idx_swp = idx_src;
+        idx_src = idx_tgt;
+        idx_tgt = idx_swp;
+    }
+    if(idx<idx_max) { fd[idx_tgt] = fd[idx_src]; }
+}
+
+__KERNEL__ void update_3d(int fd_type, int ax, int nx, int ny, int nz, __GLOBAL__ __FLOAT__* fd)
+{
+    int idx = __GET_GLOBAL_INDEX__;
+    int idx_tgt, idx_src, idx_swp, idx_max;
+    int i, k;
+
+    if(ax==0)
+    {
+        idx_tgt = (nx-1)*ny*nz + idx;
+        idx_src = (   0)*ny*nz + idx;
+        idx_max =        ny*nz      ;
+    }
+    if(ax==1)
+    {
+        i = idx  /nz;
+        k = idx-i*nz;
+        idx_tgt = i*ny*nz + (ny-1)*nz + k;
+        idx_src = i*ny*nz + (   0)*nz + k;
+        idx_max =   nz*nx                ;
+    }
+    if(ax==2)
+    {
+        idx_tgt = idx*nz + (nz-1);
+        idx_src = idx*nz + (   0);
+        idx_max =  nx*ny         ;
+    }
+    if(fd_type==0)
+    {
+        idx_swp = idx_src;
+        idx_src = idx_tgt;
+        idx_tgt = idx_swp;
+    }
+    if(idx<idx_max) { fd[idx_tgt] = fd[idx_src]; }
+}

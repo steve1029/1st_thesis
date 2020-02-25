@@ -1,0 +1,4 @@
+MPI size	gridx	gridy	gridz	gridgapx	gridgapy	gridgapz	nsteps	cal_time
+6			256		256		420		5.0e-08		5.0e-08		5.0e-09		1001		1:10:28.184561
+5			256		256		420		5.0e-08		5.0e-08		5.0e-09		1001		1:27:34.803798
+4			256		256		420		5.0e-08		5.0e-08		5.0e-09		1001		1:59:15.076651

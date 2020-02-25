@@ -1,0 +1,198 @@
+/*
+Author        : Myung-Su Seok
+Purpose       : nVIDIA CUDA, OpenCL kernels to control the Memories of GPU
+Target        : nVIDIA GPU
+Last Modified : 2013.08.01
+*/
+
+__ACTIVATE_FLOAT64__
+
+__KERNEL__ void get_data(int ndim, int size, \
+                         __GLOBAL__ int* strts, \
+                         __GLOBAL__ int* steps, \
+                         __GLOBAL__ int* d_dev, \
+                         __GLOBAL__ int* d_buf, \
+                         __GLOBAL__ __FLOAT__* at_device, \
+                         __GLOBAL__ __FLOAT__* at_buffer)
+{
+    int idx_b = __GET_GLOBAL_INDEX__;
+    int idx_d =                    0;
+    int temp  =                    0;
+
+    __DECLARE_SHARED_ARRAYS__
+
+    for(int i=0; i<ndim; i++)
+    {
+        idx_d += (((idx_b-temp)/d_buf[i])*steps[i] + strts[i])*d_dev[i];
+        temp   = (idx_b/d_buf[i])*d_buf[i];
+    }
+    if(idx_b<size)
+    {
+        at_buffer[idx_b] = at_device[idx_d];
+    }
+}
+
+__KERNEL__ void set_data_values(int ndim, int size, int opt, \
+                                __GLOBAL__ int* strts, \
+                                __GLOBAL__ int* steps, \
+                                __GLOBAL__ int* d_dev, \
+                                __GLOBAL__ int* d_buf, \
+                                __GLOBAL__ __FLOAT__* at_device, \
+                                __GLOBAL__ __FLOAT__* at_buffer)
+{
+    int idx_b = __GET_GLOBAL_INDEX__;
+    int idx_d =                    0;
+    int temp  =                    0;
+
+    __DECLARE_SHARED_ARRAYS__
+
+    for(int i=0; i<ndim; i++)
+    {
+        idx_d += (((idx_b-temp)/d_buf[i])*steps[i] + strts[i])*d_dev[i];
+        temp   = (idx_b/d_buf[i])*d_buf[i];
+    }
+    if(idx_b<size)
+    {
+        if(opt == 0)
+        {
+            at_device[idx_d]  = at_buffer[idx_b];
+        }
+        else if(opt == 1)
+        {
+            at_device[idx_d] += at_buffer[idx_b];
+        }
+        else if(opt == 2)
+        {
+            at_device[idx_d] -= at_buffer[idx_b];
+        }
+        else if(opt == 3)
+        {
+            at_device[idx_d] *= at_buffer[idx_b];
+        }
+        else if(opt == 4)
+        {
+            at_device[idx_d] /= at_buffer[idx_b];
+        }
+    }
+}
+
+__KERNEL__ void set_data_svalue(int ndim, int size, int opt, \
+                                __GLOBAL__ int* strts, \
+                                __GLOBAL__ int* steps, \
+                                __GLOBAL__ int* d_dev, \
+                                __GLOBAL__ int* d_buf, \
+                                __GLOBAL__ __FLOAT__* at_device, \
+                                __FLOAT__ value)
+{
+    int idx_b = __GET_GLOBAL_INDEX__;
+    int idx_d =                    0;
+    int temp  =                    0;
+
+    __DECLARE_SHARED_ARRAYS__
+
+    for(int i=0; i<ndim; i++)
+    {
+        idx_d += (((idx_b-temp)/d_buf[i])*steps[i] + strts[i])*d_dev[i];
+        temp   = (idx_b/d_buf[i])*d_buf[i];
+    }
+    if(idx_b<size)
+    {
+        if(opt == 0)
+        {
+            at_device[idx_d]  = value;
+        }
+        else if(opt == 1)
+        {
+            at_device[idx_d] += value;
+        }
+        else if(opt == 2)
+        {
+            at_device[idx_d] -= value;
+        }
+        else if(opt == 3)
+        {
+            at_device[idx_d] *= value;
+        }
+        else if(opt == 4)
+        {
+            at_device[idx_d] /= value;
+        }
+    }
+}
+
+__KERNEL__ void sub_sync_buf( int direction, int p, int nx, int ny, int nz \
+                            , __GLOBAL__ __FLOAT__* sub_ex \
+                            , __GLOBAL__ __FLOAT__* sub_ey \
+                            , __GLOBAL__ __FLOAT__* sub_ez \
+                            , __GLOBAL__ __FLOAT__* sub_hx \
+                            , __GLOBAL__ __FLOAT__* sub_hy \
+                            , __GLOBAL__ __FLOAT__* sub_hz \
+                            , __GLOBAL__ __FLOAT__* bfield)
+{
+    int idx     =         __GET_GLOBAL_INDEX__;
+    int idx_src = direction*(nx-2)*ny*nz + idx;
+
+    if(idx<2*ny*nz)
+    {
+        bfield[(p   )*ny*nz + idx] = sub_ex[idx_src];
+        bfield[(p+ 2)*ny*nz + idx] = sub_ey[idx_src];
+        bfield[(p+ 4)*ny*nz + idx] = sub_ez[idx_src];
+        bfield[(p+ 6)*ny*nz + idx] = sub_hx[idx_src];
+        bfield[(p+ 8)*ny*nz + idx] = sub_hy[idx_src];
+        bfield[(p+10)*ny*nz + idx] = sub_hz[idx_src];
+    }
+}
+
+__KERNEL__ void subf_to_buff(int direction, int nx, int ny, int nz, \
+                             __GLOBAL__ __FLOAT__* sfield, __GLOBAL__ __FLOAT__* bfield)
+{
+    int idx     =                     __GET_GLOBAL_INDEX__;
+    int idx_src = (  direction)*(nx-3)*ny*nz + ny*nz + idx;
+    int idx_tgt = (1-direction)*       ny*nz         + idx;
+
+    if(idx<ny*nz) { bfield[idx_tgt] = sfield[idx_src]; }
+}
+
+__KERNEL__ void buff_to_subf(int direction, int nx, int ny, int nz, \
+                             __GLOBAL__ __FLOAT__* sfield, __GLOBAL__ __FLOAT__* bfield)
+{
+    int idx     =         __GET_GLOBAL_INDEX__;
+    int idx_src = direction*       ny*nz + idx;
+    int idx_tgt = direction*(nx-1)*ny*nz + idx;
+
+    if(idx<ny*nz) { sfield[idx_tgt] = bfield[idx_src]; }
+}
+
+__KERNEL__ void field_to_buf(int direction, int p, int nx, int ny, int nz, \
+                             __GLOBAL__ __FLOAT__* field, __GLOBAL__ __FLOAT__* buf)
+{
+    int idx     =         __GET_GLOBAL_INDEX__;
+    int idx_src = direction*(nx-1)*ny*nz + idx;
+    int idx_tgt =               p *ny*nz + idx;
+
+    if(idx<ny*nz) { buf[idx_tgt] = field[idx_src]; }
+}
+
+__KERNEL__ void buf_to_field(int direction, int p, int nx, int ny, int nz, \
+                             __GLOBAL__ __FLOAT__* field, __GLOBAL__ __FLOAT__* buf)
+{
+    int idx     =         __GET_GLOBAL_INDEX__;
+    int idx_src =               p *ny*nz + idx;
+    int idx_tgt = direction*(nx-1)*ny*nz + idx;
+
+    if(idx<ny*nz) { field[idx_tgt] = buf[idx_src]; }
+}
+
+__KERNEL__ void buf_to_field_bbc(int direction, int p_r, int p_i, int nx, int ny, int nz, __FLOAT__ coskl, __FLOAT__ sinkl, \
+                                 __GLOBAL__ __FLOAT__* field, __GLOBAL__ __FLOAT__* buf)
+{
+    int idx     =         __GET_GLOBAL_INDEX__;
+    int idx_srr =             p_r *ny*nz + idx;
+    int idx_sri =             p_i *ny*nz + idx;
+    int idx_tgt = direction*(nx-1)*ny*nz + idx;
+
+    if(idx<ny*nz) 
+	{ 
+		field[idx_tgt] = coskl*buf[idx_srr] + sinkl*buf[idx_sri]; 
+	}
+}

@@ -1,0 +1,74 @@
+/*
+Author        : Myung-Su Seok
+Purpose       : OpenCL kernels to incident wave
+Target        : GPU
+Last Modified : 2012.05.08
+*/
+
+__ACTIVATE_FLOAT64__
+
+__KERNEL__ void update_from_array( int i_strt, int j_strt, int k_strt \
+                                 , int nx_d, int ny_d, int nz_d \
+                                 , int nx_h, int ny_h, int nz_h \
+                                 , __GLOBAL__ __FLOAT__* field, __GLOBAL__ __FLOAT__* val)
+{
+    int idx_h = __GET_GLOBAL_INDEX__;
+    int i_h   =  idx_h /     (ny_h*nz_h)           ;
+    int j_h   = (idx_h - i_h*(ny_h*nz_h))     /nz_h;
+    int k_h   =  idx_h - i_h*(ny_h*nz_h) - j_h*nz_h;
+    int i_d   = i_h + i_strt;
+    int j_d   = j_h + j_strt;
+    int k_d   = k_h + k_strt;
+    int idx_d = i_d*ny_d*nz_d + j_d*nz_d + k_d;
+
+    if(idx_h<nx_h*ny_h*nz_h)
+    {
+        field[idx_d] += val[idx_h];
+    }
+}
+
+__KERNEL__ void update_from_value( int i_strt, int j_strt, int k_strt \
+                                 , int nx_d, int ny_d, int nz_d \
+                                 , int nx_h, int ny_h, int nz_h \
+                                 , __GLOBAL__ __FLOAT__* field, __FLOAT__ val)
+{
+    int idx_h = __GET_GLOBAL_INDEX__;
+    int i_h   =  idx_h /     (ny_h*nz_h)           ;
+    int j_h   = (idx_h - i_h*(ny_h*nz_h))     /nz_h;
+    int k_h   =  idx_h - i_h*(ny_h*nz_h) - j_h*nz_h;
+    int i_d   = i_h + i_strt;
+    int j_d   = j_h + j_strt;
+    int k_d   = k_h + k_strt;
+    int idx_d = i_d*ny_d*nz_d + j_d*nz_d + k_d;
+
+    if(idx_h<nx_h*ny_h*nz_h)
+    {
+        field[idx_d] += val;
+    }
+}
+
+__KERNEL__ void update_mnch( int i_strt, int j_strt, int k_strt \
+                           , int nx_d, int ny_d, int nz_d \
+                           , int nx_h, int ny_h, int nz_h \
+                           , __FLOAT__ wfreq_t \
+                           , __FLOAT__ phase_imag \
+                           , __FLOAT__ _switch \
+                           , __GLOBAL__ __FLOAT__* coeff \
+                           , __GLOBAL__ __FLOAT__* phase \
+                           , __GLOBAL__ __FLOAT__* field \
+                           )
+{
+    int idx_h = __GET_GLOBAL_INDEX__;
+    int i_h   =  idx_h /     (ny_h*nz_h)           ;
+    int j_h   = (idx_h - i_h*(ny_h*nz_h))     /nz_h;
+    int k_h   =  idx_h - i_h*(ny_h*nz_h) - j_h*nz_h;
+    int i_d   = i_h + i_strt;
+    int j_d   = j_h + j_strt;
+    int k_d   = k_h + k_strt;
+    int idx_d = i_d*ny_d*nz_d + j_d*nz_d + k_d;
+
+    if(idx_h<nx_h*ny_h*nz_h)
+    {
+        field[idx_d] += _switch*coeff[idx_h]*sin(wfreq_t+phase[idx_h]+phase_imag);
+    }
+}

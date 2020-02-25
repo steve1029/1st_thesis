@@ -1,0 +1,266 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass article
+\begin_preamble
+\usepackage{kotex}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language korean
+\language_package default
+\inputencoding utf8
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\float_placement h
+\paperfontsize default
+\spacing onehalf
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 2cm
+\topmargin 2.5cm
+\rightmargin 2cm
+\bottommargin 2cm
+\headheight 0cm
+\headsep 0cm
+\footskip 0cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation 0bp
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+KEMP 개발 노트
+\end_layout
+
+\begin_layout Author
+김기환
+\end_layout
+
+\begin_layout Date
+2012년 1월 25일
+\end_layout
+
+\begin_layout Section
+변경 사항
+\end_layout
+
+\begin_layout Description
+2012.1.24 CPML
+\end_layout
+
+\begin_layout Section
+개발 목표
+\end_layout
+
+\begin_layout Standard
+KEMP는 Korea ElectroMagnetic wave Propagator의 머리글자이다.
+ 첫 글자 K는 Korea와 Korea University의 머리글자를 의미하기도 하고, 주 개발자인 김기환(Ki-Hwan Kim)과
+ 김경호(KyoungHo Kim)의 머리글자를 의미하기도 한다.
+\end_layout
+
+\begin_layout Standard
+KEMP는 GPU 클러스터에서 구동되는 고속 FDTD
+\end_layout
+
+\begin_layout Section
+개발 목록
+\end_layout
+
+\begin_layout Description
+Target
+\begin_inset space ~
+\end_inset
+
+device GPU, CPU, Multi-GPU + CPU, MPI cluster
+\end_layout
+
+\begin_layout Description
+Target
+\begin_inset space ~
+\end_inset
+
+OS Linux, Windows, MAC OS
+\end_layout
+
+\begin_layout Description
+Target
+\begin_inset space ~
+\end_inset
+
+function FDTD core, PBC, PML, TFSF, Geometry
+\end_layout
+
+\begin_layout Subsection
+Core
+\end_layout
+
+\begin_layout Subsubsection*
+GPU
+\end_layout
+
+\begin_layout Subsubsection*
+CPU
+\end_layout
+
+\begin_layout Subsubsection*
+Node
+\end_layout
+
+\begin_layout Subsubsection*
+MPI
+\end_layout
+
+\begin_layout Subsection
+PBC
+\end_layout
+
+\begin_layout Subsection
+PML
+\end_layout
+
+\begin_layout Subsection
+Geometry
+\end_layout
+
+\begin_layout Subsubsection*
+Sphere
+\end_layout
+
+\begin_layout Subsubsection*
+Cylinder
+\end_layout
+
+\begin_layout Subsubsection*
+Cone
+\end_layout
+
+\begin_layout Subsubsection*
+Cube
+\end_layout
+
+\begin_layout Subsubsection*
+Polyhedron
+\end_layout
+
+\begin_layout Section
+일지
+\end_layout
+
+\begin_layout Subsection*
+2012.1.12 NPML 구현
+\end_layout
+
+\begin_layout Standard
+NPML (Nearly PML)을 x+ 방향에 대해 numpy로 구현했다.
+\end_layout
+
+\begin_layout Standard
+NPML의 장점은 다음과 같다.
+\end_layout
+
+\begin_layout Itemize
+수식 유도 과정이 UPML과 CPML에 비해 간결하고 직관적이다
+\end_layout
+
+\begin_layout Itemize
+host 매질에 전혀 무관하게 PML 수식이 유도된다
+\end_layout
+
+\begin_layout Itemize
+host-update 식을 전혀 수정하지 않고 
+\begin_inset Formula $\kappa$
+\end_inset
+
+값을 처리할 수 있다
+\end_layout
+
+\begin_layout Standard
+그런데 막상 구현해보니 다음과 같은 단점들이 있다.
+\end_layout
+
+\begin_layout Itemize
+Addition 방법으로 구현하다보니 CPML에 비해 update 식이 오히려 더 복잡해졌다
+\end_layout
+
+\begin_layout Itemize
+실제로는 PML이 동작하지만, 겉보기에는 PML 영역에서의 field 값이 감소되지 않는 것처럼 보인다.
+ 
+\end_layout
+
+\begin_layout Standard
+또한 NPML의 장점으로 꼽았던 
+\begin_inset Formula $\kappa$
+\end_inset
+
+값 구현이 CPML에서도 non-uniform grid 구현을 위한 1 차원 배열을 사용하면 비교적 쉽게 해결된다.
+ 따라서 현재 상황에서는 굳이 NPML을 선택할 이유가 없어 보인다.
+ 석명수와 상의한 결과 CPML을 사용하기로 결정했다.
+\end_layout
+
+\begin_layout Standard
+석명수가 CPML 수식 유도 과정을 정리하였다.
+ 
+\end_layout
+
+\begin_layout Subsection*
+2012.1.13 CPML 구현
+\end_layout
+
+\begin_layout Standard
+CPML (Convolution PML)을 3 차원 6 방향에 대해 numpy로 구현했다.
+ 
+\end_layout
+
+\begin_layout Subsection*
+2012.1.23 CPML 구현
+\end_layout
+
+\begin_layout Standard
+CPML을 3 차원 6 방향에 대해 PyOpenCL로 구현했다.
+\end_layout
+
+\end_body
+\end_document

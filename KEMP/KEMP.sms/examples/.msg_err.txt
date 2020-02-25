@@ -1,0 +1,101 @@
+/tmp/tmp20rtWq/6.c(247): warning #266: function "private" declared implicitly
+      private( idx, i, j, idxe )
+      ^
+
+/tmp/tmp20rtWq/6.c(247): warning #592: variable "idx" is used before its value is set
+      private( idx, i, j, idxe )
+               ^
+
+/tmp/tmp20rtWq/6.c(247): warning #592: variable "i" is used before its value is set
+      private( idx, i, j, idxe )
+                    ^
+
+/tmp/tmp20rtWq/6.c(247): warning #592: variable "j" is used before its value is set
+      private( idx, i, j, idxe )
+                       ^
+
+/tmp/tmp20rtWq/6.c(247): warning #592: variable "idxe" is used before its value is set
+      private( idx, i, j, idxe )
+                          ^
+
+/tmp/tmp20rtWq/6.c(248): error: expected a ";"
+      for(idx=0; idx<snx*sny; idx++)
+      ^
+
+/tmp/tmp20rtWq/6.c(256): warning #12: parsing restarts here after previous syntax error
+  }
+  ^
+
+/tmp/tmp20rtWq/6.c(247): error: omp for directive requires a proceeding for statement
+      private( idx, i, j, idxe )
+      ^
+
+/tmp/tmp20rtWq/6.c(270): warning #266: function "private" declared implicitly
+      private( idx, i, j, idxe )
+      ^
+
+/tmp/tmp20rtWq/6.c(270): warning #592: variable "idx" is used before its value is set
+      private( idx, i, j, idxe )
+               ^
+
+/tmp/tmp20rtWq/6.c(270): warning #592: variable "i" is used before its value is set
+      private( idx, i, j, idxe )
+                    ^
+
+/tmp/tmp20rtWq/6.c(270): warning #592: variable "j" is used before its value is set
+      private( idx, i, j, idxe )
+                       ^
+
+/tmp/tmp20rtWq/6.c(270): warning #592: variable "idxe" is used before its value is set
+      private( idx, i, j, idxe )
+                          ^
+
+/tmp/tmp20rtWq/6.c(271): error: expected a ";"
+      for(idx=0; idx<snx*sny; idx++)
+      ^
+
+/tmp/tmp20rtWq/6.c(278): warning #12: parsing restarts here after previous syntax error
+  }
+  ^
+
+/tmp/tmp20rtWq/6.c(270): error: omp for directive requires a proceeding for statement
+      private( idx, i, j, idxe )
+      ^
+
+/tmp/tmp20rtWq/6.c(292): warning #266: function "private" declared implicitly
+      private( idx, i, j, k, idxe )
+      ^
+
+/tmp/tmp20rtWq/6.c(292): warning #592: variable "idx" is used before its value is set
+      private( idx, i, j, k, idxe )
+               ^
+
+/tmp/tmp20rtWq/6.c(292): warning #592: variable "i" is used before its value is set
+      private( idx, i, j, k, idxe )
+                    ^
+
+/tmp/tmp20rtWq/6.c(292): warning #592: variable "j" is used before its value is set
+      private( idx, i, j, k, idxe )
+                       ^
+
+/tmp/tmp20rtWq/6.c(292): warning #592: variable "k" is used before its value is set
+      private( idx, i, j, k, idxe )
+                          ^
+
+/tmp/tmp20rtWq/6.c(292): warning #592: variable "idxe" is used before its value is set
+      private( idx, i, j, k, idxe )
+                             ^
+
+/tmp/tmp20rtWq/6.c(293): error: expected a ";"
+      for(idx=0; idx<snx*sny*snz; idx++)
+      ^
+
+/tmp/tmp20rtWq/6.c(303): warning #12: parsing restarts here after previous syntax error
+  }
+  ^
+
+/tmp/tmp20rtWq/6.c(292): error: omp for directive requires a proceeding for statement
+      private( idx, i, j, k, idxe )
+      ^
+
+compilation aborted for /tmp/tmp20rtWq/6.c (code 2)
