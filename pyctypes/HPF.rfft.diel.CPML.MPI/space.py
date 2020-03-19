@@ -900,6 +900,8 @@ class Basic3D(object):
 
 	def updateH(self,tstep) :
 		
+		#self.MPIcomm.Barrier()
+
 		#--------------------------------------------------------------#
 		#------------ MPI send Ex and Ey to previous rank -------------#
 		#--------------------------------------------------------------#
@@ -921,6 +923,8 @@ class Basic3D(object):
 			recvEylast_re = self.MPIcomm.recv( source=(self.MPIrank+1), tag=(tstep*100+9 ))
 			recvEzlast_re = self.MPIcomm.recv( source=(self.MPIrank+1), tag=(tstep*100+11))
 		
+		#self.MPIcomm.Barrier()
+
 		# Get x derivatives of Ey and Ez.
 		if self.MPIrank < (self.MPIsize-1):
 			self.clib_core.get_deriv_x_E_FM0( \
@@ -1320,6 +1324,8 @@ class Basic3D(object):
 
 	def updateE(self, tstep):
 
+		#self.MPIcomm.Barrier()
+
 		#---------------------------------------------------------#
 		#------------ MPI send Hy and Hz to next rank ------------#
 		#---------------------------------------------------------#
@@ -1340,6 +1346,8 @@ class Basic3D(object):
 
 			recvHyfirst_re = self.MPIcomm.recv( source=(self.MPIrank-1), tag=(tstep*100+3))
 			recvHzfirst_re = self.MPIcomm.recv( source=(self.MPIrank-1), tag=(tstep*100+5))
+
+		#self.MPIcomm.Barrier()
 
 		# Get x derivatives of Hy and Hz.
 		if self.MPIrank > 0:

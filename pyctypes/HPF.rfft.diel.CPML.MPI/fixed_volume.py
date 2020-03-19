@@ -16,7 +16,7 @@ nm = 1e-9
 um = 1e-6
 
 Lx, Ly, Lz = 540*30*um, 512*30*um, 512*30*um
-Nx, Ny, Nz = 270, 128, 128
+Nx, Ny, Nz = 540, 256, 256
 dx, dy, dz = Lx/Nx, Ly/Ny, Lz/Nz
 
 courant = 1./4
