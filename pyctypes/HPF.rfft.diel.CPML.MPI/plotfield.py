@@ -24,37 +24,36 @@ class Graphtool(object):
 			if os.path.exists(savedir) == False: os.mkdir(savedir)
 			else: pass
 
-	def plot2D3D(self, what, tstep, xidx=None, yidx=None, zidx=None, **kwargs):
-		"""Plot 2D and 3D graph for given field and position
-
-		Parameters
-		------------
-		what : string
-			field to plot.
-		figsize : tuple
-			size of the figure.
-
-		Return
-		------
-		None
+	def gather(self, what):
+		"""Gather the data resident in rank >0 to rank 0.
 		"""
-
 		###################################################################################
 		###################### Gather field data from all slave nodes #####################
 		###################################################################################
 		
-		if	 what == 'Ex':
-			self.gathered_fields_re = self.Space.MPIcomm.gather(self.Space.Ex_re, root=0)
-		elif what == 'Ey':
-			self.gathered_fields_re = self.Space.MPIcomm.gather(self.Space.Ey_re, root=0)
-		elif what == 'Ez':
-			self.gathered_fields_re = self.Space.MPIcomm.gather(self.Space.Ez_re, root=0)
-		elif what == 'Hx':
-			self.gathered_fields_re = self.Space.MPIcomm.gather(self.Space.Hx_re, root=0)
-		elif what == 'Hy':
-			self.gathered_fields_re = self.Space.MPIcomm.gather(self.Space.Hy_re, root=0)
-		elif what == 'Hz':
-			self.gathered_fields_re = self.Space.MPIcomm.gather(self.Space.Hz_re, root=0)
+		if	 what == 'Ex': gathered = self.Space.MPIcomm.gather(self.Space.Ex_re, root=0)
+		elif what == 'Ey': gathered = self.Space.MPIcomm.gather(self.Space.Ey_re, root=0)
+		elif what == 'Ez': gathered = self.Space.MPIcomm.gather(self.Space.Ez_re, root=0)
+		elif what == 'Hx': gathered = self.Space.MPIcomm.gather(self.Space.Hx_re, root=0)
+		elif what == 'Hy': gathered = self.Space.MPIcomm.gather(self.Space.Hy_re, root=0)
+		elif what == 'Hz': gathered = self.Space.MPIcomm.gather(self.Space.Hz_re, root=0)
+
+		self.what = what
+
+		if self.Space.MPIrank == 0: 
+		
+			self.integrated = np.zeros((self.Space.grid), dtype=self.Space.dtype)
+
+			for MPIrank in range(self.Space.MPIsize):
+				self.integrated[self.Space.myNx_slices[MPIrank],:,:] = gathered[MPIrank]
+
+				#if MPIrank == 1: print(MPIrank, gathered[MPIrank][xidx,yidx,zidx])
+
+			return self.integrated
+
+		else: return None
+
+	def plot2D3D(self, integrated, tstep, xidx=None, yidx=None, zidx=None, **kwargs):
 
 		if self.Space.MPIrank == 0: 
 
@@ -78,12 +77,13 @@ class Graphtool(object):
 			for key, value in kwargs.items():
 
 				if	 key == 'colordeep': colordeep = value
-				elif key == 'stride'   : stride    = value
-				elif key == 'zlim'	   : zlim	   = value
-				elif key == 'figsize'  : figsize   = value
-				elif key == 'cmap'	   : cmap	   = value
-				elif key == 'lc': lc = value
+				elif key == 'figsize': figsize = value
 				elif key == 'aspect': aspect = value
+				elif key == 'stride': stride = value
+				elif key == 'what': self.what = value
+				elif key == 'zlim': zlim = value
+				elif key == 'cmap': cmap = value
+				elif key == 'lc': lc = value
 
 			if xidx != None : 
 				assert type(xidx) == int
@@ -119,16 +119,9 @@ class Graphtool(object):
 			######### Build up total field with the parts of the grid from slave nodes ##########
 			#####################################################################################
 
-			integrated_field_re = np.zeros((self.Space.grid), dtype=self.Space.dtype)
+			self.plane_to_plot_re = integrated[xidx, yidx, zidx].copy()
 
-			for MPIrank in range(self.Space.MPIsize):
-				integrated_field_re[self.Space.myNx_slices[MPIrank],:,:] = self.gathered_fields_re[MPIrank]
-
-				#if MPIrank == 1: print(MPIrank, self.gathered_fields_re[MPIrank][xidx,yidx,zidx])
-
-			plane_to_plot_re = integrated_field_re[xidx, yidx, zidx].copy()
-
-			Row, Col = np.meshgrid(row, col)
+			Row, Col = np.meshgrid(row, col, indexing='xy', sparse=True)
 			today	 = datetime.date.today()
 
 			fig  = plt.figure(figsize=figsize)
@@ -137,8 +130,8 @@ class Graphtool(object):
 
 			if plane == 'yz':
 
-				image11 = ax11.imshow(plane_to_plot_re.T, vmax=colordeep, vmin=-colordeep, cmap=cmap, aspect=aspect)
-				ax12.plot_wireframe(Col, Row, plane_to_plot_re[Col, Row], color=lc, rstride=stride, cstride=stride)
+				image11 = ax11.imshow(self.plane_to_plot_re.T, vmax=colordeep, vmin=-colordeep, cmap=cmap, aspect=aspect)
+				ax12.plot_wireframe(Col, Row, self.plane_to_plot_re[Col, Row], color=lc, rstride=stride, cstride=stride)
 
 				divider11 = make_axes_locatable(ax11)
 
@@ -155,8 +148,8 @@ class Graphtool(object):
 
 			elif plane == 'xy':
 
-				image11 = ax11.imshow(plane_to_plot_re.T, vmax=colordeep, vmin=-colordeep, cmap=cmap, aspect=aspect)
-				ax12.plot_wireframe(Col, Row, plane_to_plot_re[Col, Row], color=lc, rstride=stride, cstride=stride)
+				image11 = ax11.imshow(self.plane_to_plot_re.T, vmax=colordeep, vmin=-colordeep, cmap=cmap, aspect=aspect)
+				ax12.plot_wireframe(Col, Row, self.plane_to_plot_re[Col, Row], color=lc, rstride=stride, cstride=stride)
 
 				divider11 = make_axes_locatable(ax11)
 
@@ -173,8 +166,8 @@ class Graphtool(object):
 
 			elif plane == 'xz':
 
-				image11 = ax11.imshow(plane_to_plot_re.T, vmax=colordeep, vmin=-colordeep, cmap=cmap, aspect=aspect)
-				ax12.plot_wireframe(Col, Row, plane_to_plot_re[Col, Row], color=lc, rstride=stride, cstride=stride)
+				image11 = ax11.imshow(self.plane_to_plot_re.T, vmax=colordeep, vmin=-colordeep, cmap=cmap, aspect=aspect)
+				ax12.plot_wireframe(Col, Row, self.plane_to_plot_re[Col, Row], color=lc, rstride=stride, cstride=stride)
 
 				divider11 = make_axes_locatable(ax11)
 
@@ -189,8 +182,8 @@ class Graphtool(object):
 				ax12.set_xlabel('x')
 				ax12.set_ylabel('z')
 
-			ax11.set_title(r'$%s.real, 2D$' %what)
-			ax12.set_title(r'$%s.real, 3D$' %what)
+			ax11.set_title(r'$%s.real, 2D$' %self.what)
+			ax12.set_title(r'$%s.real, 3D$' %self.what)
 
 			ax12.set_zlim(-zlim,zlim)
 			ax12.set_zlabel('field')
@@ -200,5 +193,5 @@ class Graphtool(object):
 
 			if os.path.exists(save_dir) == False: os.mkdir(save_dir)
 			plt.tight_layout()
-			fig.savefig('%s%s_%s_%s_%s.png' %(save_dir, str(today), self.name, what, tstep), format='png', bbox_inches='tight')
+			fig.savefig('%s%s_%s_%s_%s_%s.png' %(save_dir, str(today), self.name,self.what, plane, tstep), format='png', bbox_inches='tight')
 			plt.close('all')

@@ -105,14 +105,36 @@ class Sine(object):
 		self.omega = 2 * np.pi * self.freq
 		self.wvector = 2 * np.pi / self.wvlen
 
-	def pulse_re(self, tstep):
+	def signal(self, tstep):
 
 		pulse_re = np.sin(self.omega * tstep * self.dt)
 
 		return pulse_re
 
-	def pulse_im(self, tstep):
 
-		pulse_im = np.cos(self.omega * tstep * self.dt)
+class Cosine(object):
 
-		return pulse_im
+	def __init__(self, dt, dtype):
+
+		self.dt = dt
+		self.dtype = dtype
+
+	def set_freq(self, freq):
+		
+		self.freq = freq
+		self.wvlen = c / self.freq
+		self.omega = 2 * np.pi * self.freq
+		self.wvector = 2 * np.pi / self.wvlen
+
+	def set_wvlen(self, wvlen):
+
+		self.wvlen = wvlen
+		self.freq = c / self.wvlen
+		self.omega = 2 * np.pi * self.freq
+		self.wvector = 2 * np.pi / self.wvlen
+
+	def signal(self, tstep):
+
+		pulse_re = np.cos(self.omega * tstep * self.dt)
+
+		return pulse_re

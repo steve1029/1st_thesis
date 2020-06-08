@@ -15,7 +15,7 @@ savedir = '/home/ldg/script/pyctypes/FDTD.real.diel.CPML.MPI/'
 nm = 1e-9
 um = 1e-6
 
-Lx, Ly, Lz = 128*10*um, 128*10*um, 128*10*um
+Lx, Ly, Lz = 128*5*um, 128*5*um, 128*5*um
 Nx, Ny, Nz = 128, 128, 128
 dx, dy, dz = Lx/Nx, Ly/Ny, Lz/Nz
 
@@ -34,10 +34,10 @@ freqs = c / wvlens
 np.save("./graph/freqs", freqs)
 
 # Set the type of input source.
-Src = source.Gaussian(dt, wvc, spread, pick_pos, dtype=np.float64)
-Src.plot_pulse(Tstep, freqs, savedir)
-#Src = source.Sine(dt, np.float64)
-#Src.set_wvlen( 50 * um)
+Sine = source.Sine(dt, np.float64)
+Sine.set_wvlen( 150 * um)
+Cosine = source.Cosine(dt, np.float64)
+Cosine.set_wvlen( 100 * um)
 
 #sys.exit()
 
@@ -68,14 +68,17 @@ Space.apply_PBC({'y':False,'z':False})
 #Space.save_PML_parameters('./')
 #Space.save_eps_mu(savedir)
 
-# Set position of Src, Ref and Trs.
-#Space.set_ref_trs_pos(ref_xpos, trs_xpos)
+# Point source
+#Space.set_src_pos((Space.Nxc, Space.Nyc, Space.Nzc), (Space.Nxc+1, Space.Nyc+1, Space.Nzc+1))
 
 # plain wave normal to x.
 #Space.set_src_pos((src_xpos, 0, 0), (src_xpos+1, Space.Ny, Space.Nz)) # Plane wave for Ey, x-direction.
 
 # Line source along y axis.
-Space.set_src_pos((src_xpos, 0, Space.Nzc), (src_xpos+1, Space.Ny, Space.Nzc+1))
+#Space.set_src_pos((src_xpos, 0, Space.Nzc), (src_xpos+1, Space.Ny, Space.Nzc+1))
+
+# Line source along z axis.
+Space.set_src_pos((src_xpos, Space.Nyc, 0), (src_xpos+1, Space.Nyc+1, Space.Nz))
 
 # Set plotfield options
 graphtool = plotfield.Graphtool(Space, '', savedir)
@@ -97,14 +100,11 @@ for tstep in range(Space.tsteps):
 			print(("Size of a total field array : %05.2f Mbytes" %(Space.TOTAL_NUM_GRID_SIZE)))
 			print("Simulation start: {}".format(datetime.datetime.now()))
 		
-	pulse_re = Src.pulse_re(tstep, pick_pos)
-	#pulse_im = Src.pulse_im(tstep, pick_pos)
+	src_sine = Sine.signal(tstep)
+	src_cosine = Cosine.signal(tstep)
 
-	#Space.put_src('Ex_re', 'Ex_im', pulse_re, 0, 'soft')
-	#Space.put_src('Ey_re', 'Ey_im', pulse_re, pulse_im, 'soft')
-	Space.put_src('Ey_re', pulse_re, 'soft')
-	#Space.put_src('Ey_re', 'Ey_im', pulse_re, 0, 'hard')
-	#Space.put_src('Ez_re', 'Ez_im', pulse_re, 0, 'soft')
+	Space.put_src('Ex_re', src_cosine, 'soft')
+	Space.put_src('Ey_re', src_sine, 'soft')
 	#Space.put_src('Ez_re', 'Ez_im', 0, 0, 'soft')
 
 	#Space.get_src('Ey', tstep)
@@ -116,8 +116,19 @@ for tstep in range(Space.tsteps):
 
 	# Plot the field profile
 	if tstep % plot_per == 0:
-		#graphtool.plot2D3D('Ex', tstep, xidx=Space.Nxc, colordeep=6., stride=2, zlim=6.)
-		graphtool.plot2D3D('Ey', tstep, yidx=Space.Nyc, colordeep=2., stride=2, zlim=1.)
+
+		Ex = graphtool.gather('Ex')
+		#graphtool.plot2D3D('Ex', tstep, xidx=Space.Nxc, colordeep=1., stride=2, zlim=1.)
+		#graphtool.plot2D3D('Ex', tstep, yidx=Space.Nyc, colordeep=1., stride=2, zlim=1.)
+		graphtool.plot2D3D(Ex, tstep, zidx=Space.Nzc, colordeep=1., stride=2, zlim=1.)
+
+		Ey = graphtool.gather('Ey')
+		#graphtool.plot2D3D('Ey', tstep, xidx=Space.Nxc, colordeep=1., stride=2, zlim=1.)
+		#graphtool.plot2D3D('Ey', tstep, yidx=Space.Nyc, colordeep=1., stride=2, zlim=1.)
+		graphtool.plot2D3D(Ey, tstep, zidx=Space.Nzc, colordeep=1., stride=2, zlim=1.)
+
+		graphtool.plot2D3D(Ey/Ex, tstep, what='phase', zidx=Space.Nzc, colordeep=1., stride=2, zlim=1.)
+		#Ez = graphtool.gather('Ez')
 		#graphtool.plot2D3D('Ez', tstep, zidx=Space.Nzc, colordeep=2., stride=2, zlim=2.)
 
 		if Space.MPIrank == 0:

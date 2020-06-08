@@ -10,77 +10,78 @@ from scipy.constants import c
 #----------------------- Paramter settings ------------------------#
 #------------------------------------------------------------------#
 
-savedir = '/home/ldg/script/pyctypes/FDTD.real.diel.CPML.MPI/'
-
 nm = 1e-9
 um = 1e-6
 
-Lx, Ly, Lz = 128*10*um, 128*10*um, 128*10*um
-Nx, Ny, Nz = 128, 128, 128
+Lx, Ly, Lz = 15.36*um, 15.36*um, 15.36*um
+Nx, Ny, Nz = 256, 256, 256
 dx, dy, dz = Lx/Nx, Ly/Ny, Lz/Nz
 
 courant = 1./4
 dt = courant * min(dx,dy,dz) / c
-Tstep = 3001
+Tstep = 2048
 
-wvc = 300*um
-interval = 2
+wv_srt = 40*um
+wv_end = 50*um
+interval = 0.1*um
 spread   = 0.3
 pick_pos = 2000
 plot_per = 100
 
-wvlens = np.arange(200, 600, interval) * um
-freqs = c / wvlens
-np.save("./graph/freqs", freqs)
-
 # Set the type of input source.
-Src = source.Gaussian(dt, wvc, spread, pick_pos, dtype=np.float64)
-Src.plot_pulse(Tstep, freqs, savedir)
-#Src = source.Sine(dt, np.float64)
-#Src.set_wvlen( 50 * um)
-
-#sys.exit()
-
-#src_xpos = round( 100*um / dx)
-#ref_xpos = round(  50*um / dx)
-#trs_xpos = round( 900*um / dx)
+#Src = source.Gaussian(dt, dtype=np.float64)
+#Src.wvlen([wv_srt, wv_end, interval, spread])
+Src = source.Sine(dt, np.float64)
+Src.set_wvlen( 600 * um)
 
 src_xpos = int(Nx/2)
-#ref_xpos = 
-#trs_xpos = 
 
-Box1_srt = (round(222*um/dx), round( 0*um/dy), round(  0*um/dz))
-Box1_end = (round(272*um/dx), round(96*um/dy), round( 96*um/dz))
+savedir = '/home/ldg/script/pyctypes/HPF.rfft.diel.CPML.MPI/'
+
 #------------------------------------------------------------------#
 #-------------------------- Call objects --------------------------#
 #------------------------------------------------------------------#
 
+# Space
 Space = space.Basic3D((Nx, Ny, Nz), (dx, dy, dz), courant, dt, Tstep, np.float64)
 
-# Put structures
+# Slab
+#Box1_srt = (0 , Space.Nyc-15, Space.Nzc-15)
+#Box1_end = (Nx, Space.Nyc+15, Space.Nzc+15)
 #Box = structure.Box(Space, Box1_srt, Box1_end, 4., 1.)
 
-# Set PML and PBC
-Space.set_PML({'x':'+-','y':'+-','z':'+-'}, 10)
-Space.apply_PBC({'y':False,'z':False})
+# Set PML
+Space.set_pml({'x':'+-', 'y':'', 'z':''}, 10)
 
 # Save eps, mu and PML data.
 #Space.save_PML_parameters('./')
 #Space.save_eps_mu(savedir)
 
-# Set position of Src, Ref and Trs.
-#Space.set_ref_trs_pos(ref_xpos, trs_xpos)
+# plane wave normal to x
+#Space.set_src_pos((src_xpos, 0, 0), (src_xpos+1, Space.Ny, Space.Nz))
 
-# plain wave normal to x.
-#Space.set_src_pos((src_xpos, 0, 0), (src_xpos+1, Space.Ny, Space.Nz)) # Plane wave for Ey, x-direction.
+# plane wave normal to y
+#Space.set_src_pos((0, Space.Nyc, 0), (Space.Nx, Space.Nyc+1, Space.Nz))
+
+# plane wave normal to z
+#Space.set_src_pos((0, 0, Space.Nzc), (Space.Nx, Space.Ny, Space.Nzc+1))
+
+# Line source along x axis.
+#Space.set_src_pos((0, int(Ny/4), int(Nz/4)), (Space.Nx, int(Ny/4)+1, int(Ny/4)+1))
 
 # Line source along y axis.
-Space.set_src_pos((src_xpos, 0, Space.Nzc), (src_xpos+1, Space.Ny, Space.Nzc+1))
+#Space.set_src_pos((Space.Nxc, 0, Space.Nzc), (Space.Nxc+1, Ny, Space.Nzc+1))
+
+# Line source along z axis.
+#Space.set_src_pos((Space.Nxc, Space.Nyc, 0), (Space.Nxc+1, Space.Nyc+1, Nz))
+
+# Point source at the center
+Space.set_src_pos((Space.Nxc, Space.Nyc, Space.Nzc), (Space.Nxc+1, Space.Nyc+1, Space.Nzc+1))
 
 # Set plotfield options
-graphtool = plotfield.Graphtool(Space, '', savedir)
+graphtool = plotfield.Graphtool(Space, 'TF', savedir)
 
-# initialize the core
+# Initialize the core
 Space.init_update_equations(omp_on=True)
 
 # Save what time the simulation begins.
@@ -96,36 +97,35 @@ for tstep in range(Space.tsteps):
 			print("Total time step: %d" %(Space.tsteps))
 			print(("Size of a total field array : %05.2f Mbytes" %(Space.TOTAL_NUM_GRID_SIZE)))
 			print("Simulation start: {}".format(datetime.datetime.now()))
-		
-	pulse_re = Src.pulse_re(tstep, pick_pos)
-	#pulse_im = Src.pulse_im(tstep, pick_pos)
+	
+	# Gaussian wave.	
+	#pulse_re = Src.pulse_re(tstep, pick_pos=pick_pos)
+	#pulse_im = Src.pulse_im(tstep, pick_pos=pick_pos)
+
+	# Sine wave.	
+	pulse_re = Src.pulse_re(tstep)
+	pulse_im = Src.pulse_im(tstep)
 
 	#Space.put_src('Ex_re', 'Ex_im', pulse_re, 0, 'soft')
-	#Space.put_src('Ey_re', 'Ey_im', pulse_re, pulse_im, 'soft')
-	Space.put_src('Ey_re', pulse_re, 'soft')
-	#Space.put_src('Ey_re', 'Ey_im', pulse_re, 0, 'hard')
+	Space.put_src('Ey_re', 'Ey_im', pulse_re, 0, 'soft')
 	#Space.put_src('Ez_re', 'Ez_im', pulse_re, 0, 'soft')
-	#Space.put_src('Ez_re', 'Ez_im', 0, 0, 'soft')
-
-	#Space.get_src('Ey', tstep)
-	#Space.get_ref('Ey', tstep)
-	#Space.get_trs('Ey', tstep)
 
 	Space.updateH(tstep)
 	Space.updateE(tstep)
 
 	# Plot the field profile
 	if tstep % plot_per == 0:
-		#graphtool.plot2D3D('Ex', tstep, xidx=Space.Nxc, colordeep=6., stride=2, zlim=6.)
-		graphtool.plot2D3D('Ey', tstep, yidx=Space.Nyc, colordeep=2., stride=2, zlim=1.)
-		#graphtool.plot2D3D('Ez', tstep, zidx=Space.Nzc, colordeep=2., stride=2, zlim=2.)
+		#graphtool.plot2D3D('Ex', tstep, yidx=Space.Nyc, colordeep=.2, stride=2, zlim=.2)
+		graphtool.plot2D3D('Ey', tstep, yidx=Space.Nyc, colordeep=2, stride=2, zlim=2)
+		#graphtool.plot2D3D('Ez', tstep, zidx=Space.Nzc, colordeep=.2, stride=2, zlim=.2)
+		#graphtool.plot2D3D('Hx', tstep, yidx=Space.Nyc, colordeep=1e-3, stride=2, zlim=1e-3)
+		#graphtool.plot2D3D('Hy', tstep, yidx=Space.Nyc, colordeep=1e-3, stride=2, zlim=1e-3)
+		#graphtool.plot2D3D('Hz', tstep, yidx=Space.Nyc, colordeep=1e-3, stride=2, zlim=1e-3)
 
 		if Space.MPIrank == 0:
 
 			interval_time = datetime.datetime.now()
 			print(("time: %s, step: %05d, %5.2f%%" %(interval_time-start_time, tstep, 100.*tstep/Space.tsteps)))
-
-#Space.save_RT()
 
 if Space.MPIrank == 0:
 
