@@ -133,7 +133,7 @@ class Cosine(object):
 		self.omega = 2 * np.pi * self.freq
 		self.wvector = 2 * np.pi / self.wvlen
 
-	def signal(self, tstep):
+	def pulse_re(self, tstep):
 
 		pulse_re = np.cos(self.omega * tstep * self.dt)
 

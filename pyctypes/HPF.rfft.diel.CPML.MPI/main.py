@@ -10,33 +10,36 @@ from scipy.constants import c
 #----------------------- Paramter settings ------------------------#
 #------------------------------------------------------------------#
 
+savedir = '/home/ldg/script/pyctypes/HPF.rfft.diel.CPML.MPI/'
+
 nm = 1e-9
 um = 1e-6
 
-Lx, Ly, Lz = 15.36*um, 15.36*um, 15.36*um
-Nx, Ny, Nz = 256, 256, 256
+Lx, Ly, Lz = 128*10*um, 128*10*um, 128*10*um
+Nx, Ny, Nz = 128, 128, 128
 dx, dy, dz = Lx/Nx, Ly/Ny, Lz/Nz
 
 courant = 1./4
 dt = courant * min(dx,dy,dz) / c
-Tstep = 2048
+Tstep = 3001
 
-wv_srt = 40*um
-wv_end = 50*um
+wvc = 300*um
 interval = 0.1*um
 spread   = 0.3
 pick_pos = 2000
 plot_per = 100
 
+wvlen = np.arange(200, 600, interval) * um
+freqs = c / wvlens
+np.save("./graph/freqs", freqs)
+
 # Set the type of input source.
-#Src = source.Gaussian(dt, dtype=np.float64)
-#Src.wvlen([wv_srt, wv_end, interval, spread])
-Src = source.Sine(dt, np.float64)
-Src.set_wvlen( 600 * um)
+Src = source.Gaussian(dt, dtype=np.float64)
+Src.wvlen([wv_srt, wv_end, interval, spread])
+#Src = source.Sine(dt, np.float64)
+#Src.set_wvlen( 600 * um)
 
 src_xpos = int(Nx/2)
-
-savedir = '/home/ldg/script/pyctypes/HPF.rfft.diel.CPML.MPI/'
 
 #------------------------------------------------------------------#
 #-------------------------- Call objects --------------------------#
@@ -103,11 +106,11 @@ for tstep in range(Space.tsteps):
 	#pulse_im = Src.pulse_im(tstep, pick_pos=pick_pos)
 
 	# Sine wave.	
-	pulse_re = Src.pulse_re(tstep)
-	pulse_im = Src.pulse_im(tstep)
+	pulse_re = Src.signal(tstep)
+	#pulse_im = Src.pulse(tstep)
 
 	#Space.put_src('Ex_re', 'Ex_im', pulse_re, 0, 'soft')
-	Space.put_src('Ey_re', 'Ey_im', pulse_re, 0, 'soft')
+	Space.put_src('Ey_re', pulse_re, 'soft')
 	#Space.put_src('Ez_re', 'Ez_im', pulse_re, 0, 'soft')
 
 	Space.updateH(tstep)

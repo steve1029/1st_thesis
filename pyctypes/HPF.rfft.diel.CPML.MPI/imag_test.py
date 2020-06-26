@@ -120,9 +120,10 @@ for tstep in range(Space.tsteps):
 		#graphtool.plot2D3D('Ex', tstep, yidx=Space.Nyc, colordeep=.2, stride=2, zlim=.2)
 		#graphtool.plot2D3D('Ex', tstep, zidx=Space.Nzc, colordeep=.2, stride=2, zlim=.2)
 
-		graphtool.plot2D3D('Ey', tstep, xidx=Space.Nxc, colordeep=1, stride=2, zlim=1)
-		#graphtool.plot2D3D('Ey', tstep, yidx=Space.Nyc, colordeep=2, stride=2, zlim=2)
-		#graphtool.plot2D3D('Ey', tstep, zidx=Space.Nzc, colordeep=2, stride=2, zlim=2)
+		Ey = graphtool.gather('Ey')
+		graphtool.plot2D3D(Ey, tstep, xidx=Space.Nxc, colordeep=1, stride=2, zlim=1)
+		#graphtool.plot2D3D(Ey, tstep, yidx=Space.Nyc, colordeep=2, stride=2, zlim=2)
+		#graphtool.plot2D3D(Ey, tstep, zidx=Space.Nzc, colordeep=2, stride=2, zlim=2)
 
 		#graphtool.plot2D3D('Ez', tstep, xidx=Space.Nxc, colordeep=.2, stride=2, zlim=.2)
 		#graphtool.plot2D3D('Ez', tstep, yidx=Space.Nyc, colordeep=.2, stride=2, zlim=.2)

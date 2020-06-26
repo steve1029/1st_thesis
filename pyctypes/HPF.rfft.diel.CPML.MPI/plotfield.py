@@ -25,7 +25,8 @@ class Graphtool(object):
 			else: pass
 
 	def gather(self, what):
-		"""Gather the data resident in rank >0 to rank 0.
+		"""
+		Gather the data resident in rank >0 to rank 0.
 		"""
 		###################################################################################
 		###################### Gather field data from all slave nodes #####################
