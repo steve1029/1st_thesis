@@ -18,14 +18,14 @@ comm.Barrier()
 
 if rank == 0:
 	randint = np.random.randint(low=0,high=100, size=n)
-	print("Root : %s, number: %d" %(hostname,randint))
+	print "Root : %s, number: %d" %(hostname,randint)
 else :
 	randint = np.zeros(n,dtype=dtype)
 
 comm.Barrier()
 randint = comm.bcast(randint, root=0)
 
-if   rank == 1: print("Host: %s, rank: %d, recv: %d" %(hostname,rank,randint))
-elif rank == 2:	print("Host: %s, rank: %d, recv: %d" %(hostname,rank,randint))
-elif rank == 3:	print("Host: %s, rank: %d, recv: %d" %(hostname,rank,randint))
+if   rank == 1: print "Host: %s, rank: %d, recv: %d" %(hostname,rank,randint)
+elif rank == 2:	print "Host: %s, rank: %d, recv: %d" %(hostname,rank,randint)
+elif rank == 3:	print "Host: %s, rank: %d, recv: %d" %(hostname,rank,randint)
 
