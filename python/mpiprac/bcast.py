@@ -18,7 +18,7 @@ comm.Barrier()
 
 if rank == 0:
 	randint = np.random.randint(low=0,high=100, size=n)
-	print("Root : %s, number: %d" %(hostname,randint))
+	print("Root: %s, number: %d" %(hostname,randint))
 else :
 	randint = np.zeros(n,dtype=dtype)
 
