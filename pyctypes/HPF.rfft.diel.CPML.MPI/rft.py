@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 
 class Sx(object):
 
-<<<<<<< HEAD
     def __init__(self, name, path, Space, srt, end, freqs, omp_on):
         """Sx collector object.
 
@@ -181,7 +180,7 @@ class Sx(object):
 
             self.Sx_area = self.Sx.sum(axis=(1,2)) * self.Space.dy * self.Space.dz
             np.save("./graph/%s_area" %self.name, self.Sx_area)
-=======
+
 	def __init__(self, name, path, Space, srt, end, freqs, omp_on):
 		"""Sx collector object.
 
@@ -357,12 +356,10 @@ class Sx(object):
 
 			self.Sx_area = self.Sx.sum(axis=(1,2)) * self.Space.dy * self.Space.dz
 			np.save("./graph/%s_area" %self.name, self.Sx_area)
->>>>>>> .
 
 
 class Sy(object):
 
-<<<<<<< HEAD
     def __init__(self, name, path, Space, srt, end, freqs, omp_on):
         """Sy collector object.
 
@@ -619,7 +616,7 @@ class Sy(object):
 
             self.Sy_area = self.Sy.sum(axis=(1,2)) * self.Space.dx * self.Space.dz
             np.save("./graph/%s_area" %self.name, self.Sy_area)
-=======
+
 	def __init__(self, name, path, Space, srt, end, freqs, omp_on):
 		"""Sy collector object.
 
@@ -876,13 +873,10 @@ class Sy(object):
 
 			self.Sy_area = self.Sy.sum(axis=(1,2)) * self.Space.dx * self.Space.dz
 			np.save("./graph/%s_area" %self.name, self.Sy_area)
->>>>>>> .
-
 
 
 class Sz(object):
 
-<<<<<<< HEAD
     def __init__(self, name, path, Space, srt, end, freqs, omp_on):
         """Sy collector object.
 
@@ -1135,7 +1129,7 @@ class Sz(object):
 
             self.Sz_area = self.Sz.sum(axis=(1,2)) * self.Space.dx * self.Space.dy
             np.save("./graph/%s_area" %self.name, self.Sz_area)
-=======
+
 	def __init__(self, name, path, Space, srt, end, freqs, omp_on):
 		"""Sy collector object.
 
