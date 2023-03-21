@@ -382,15 +382,6 @@ class Basic3D(object):
 
         for key, value in region.items():
 
-<<<<<<< HEAD
-            if   key == 'x':
-
-                if   value == '+'                  : raise ValueError("input '+-' or '-+'.")
-                elif value == '-'                  : raise ValueError("input '+-' or '-+'.")
-                elif value == '+-' or value == '-+':
-
-                    if   self.MPIrank == 0               : self.myPBCregion_x = '-'
-=======
             if key == 'x':
 
                 if value == '+': raise ValueError("input '+-' or '-+'.")
@@ -398,7 +389,6 @@ class Basic3D(object):
                 elif value == '+-' or value == '-+':
 
                     if self.MPIrank == 0: self.myPBCregion_x = '-'
->>>>>>> .
                     elif self.MPIrank == (self.MPIsize-1): self.myPBCregion_x = '+'
 
             elif key == 'y':
